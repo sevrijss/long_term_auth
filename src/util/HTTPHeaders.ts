@@ -1,0 +1,1 @@
+export const WWW_Authenticate = "WWW-Authenticate"

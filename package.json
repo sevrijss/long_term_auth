@@ -12,6 +12,19 @@
   "author": "Seppe Van Rijsselberghe",
   "license": "MIT",
   "dependencies": {
+    "@inrupt/solid-client-authn-core": "^1.12.2",
+    "@inrupt/solid-client-authn-node": "^1.12.2",
+    "@solid/community-server": "^5.0.0",
+    "@types/node": "^18.7.6",
+    "arrayify-stream": "^2.0.0",
+    "n3": "^1.16.2",
+    "rdf-dereference": "^2.0.0",
+    "rdf-js": "^4.0.2"
+  },
+  "devDependencies": {
+    "@tsconfig/node14": "^1.0.3",
+    "@types/node": "^18.7.6",
+    "@types/node-fetch": "^2.6.2",
     "typescript": "^4.7.4"
   }
 }
