@@ -116,7 +116,7 @@ export default class SolidFetch {
             if (!this.cache[webID]) {
                 if (provider === INRUPT) {
                     /*
-                     * for inrupt: [register appication](https://broker.pod.inrupt.com/registration.html)
+                     * for inrupt: [register application](https://broker.pod.inrupt.com/registration.html)
                      */
                     this.logger.info("please register this app on https://broker.pod.inrupt.com/registration.html")
                     let client_id = await ask("client id:")
