@@ -4,4 +4,4 @@ build
 local-files
 /.idea/
 /package-lock.json
-/config/data.json
+/config/
