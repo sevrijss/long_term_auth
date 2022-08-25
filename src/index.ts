@@ -4,6 +4,11 @@ export * from "./solidFetch";
 
 async function main() {
     const sf = new SolidFetch()
+
+    // the localhost pod was a temporary CSS instance running in memory.
+    // see the official CSS github to install one
+
+
     // unauthenticated fetch
     let data = await sf.fetch(
         "http://localhost:3000/TestPod/profile/card#me",
