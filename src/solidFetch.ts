@@ -20,7 +20,7 @@ const fetch = nodeFetch
 
 const STORAGE = process.cwd() + "\\config\\data.json"
 /*
- * this line guaranteeds the file exists,
+ * this line guarantees the file exists,
  * the `a` flag makes sure the file ISN'T cleared
  * on startup. The default would be `w` which clears
  * the file.
@@ -49,7 +49,6 @@ export default class SolidFetch {
     private webID: string;
 
     private cache: Record<string, cacheRecord>;
-    //private CSSCache: Record<string, cacheRecord>;
     private readonly CSSTokenCache: Record<string, Token>
 
     constructor() {
@@ -88,6 +87,7 @@ export default class SolidFetch {
     async fetch(url: string, webID: string): Promise<Quad[]> {
         let result: Response
         let failed = false
+        // Step -1: try to fetch resource without authentication/authorization
         try {
             console.log("trying normal fetch");
             result = await fetch(url)
@@ -99,10 +99,12 @@ export default class SolidFetch {
             failed = true;
         }
         if (!failed) {
+            // return result in quads
             return await responseToQuads(result)
         } else {
             this.logger.warn("fetch failed, trying an authorized approach")
 
+            // first step: get oidc issuer
             let quads = await arrayifyStream((await rdfDereferencer.dereference(webID)).data)
             let store = new Store(quads);
             let provider = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
@@ -110,18 +112,57 @@ export default class SolidFetch {
                 provider += "/";
             }
 
-            if (provider === INRUPT) {
-                if (!this.cache[webID]) {
+            // check if there is an <id,secret> pair available.
+            if (!this.cache[webID]) {
+                if (provider === INRUPT) {
+                    /*
+                     * for inrupt: [register appication](https://broker.pod.inrupt.com/registration.html)
+                     */
                     this.logger.info("please register this app on https://broker.pod.inrupt.com/registration.html")
                     let client_id = await ask("client id:")
                     let client_secret = await ask("client secret:")
                     this.cache[webID] = {id: client_id, secret: client_secret}
                     this.backupCache()
+                } else {
+                    // I presume your provider is a Community Solid Server instance
+                    // register using email and password
+                    const email = await ask("email");
+                    const passwd = await ask("password:", true);
+                    /*
+                     * Request id and secret according to the [spec](https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/#generating-a-token)
+                     */
+                    const response = await fetch(`${provider}idp/credentials/`, {
+                        method: 'POST',
+                        headers: {'content-type': 'application/json'},
+                        // The email/password fields are those of your account.
+                        // The name field will be used when generating the ID of your token.
+                        body: JSON.stringify({
+                            email: email,
+                            password: passwd,
+                            name: `auth_fetch_${Date.now().toString()}`
+                        }),
+                    });
+
+                    const json = await response.json();
+                    // id and secret from the response
+                    let id = json.id;
+                    let secret = json.secret;
+                    this.cache[webID] = {id, secret}
+                    this.backupCache()
                 }
+            }
 
-                const client_id = this.cache[webID].id
-                const client_secret = this.cache[webID].secret
+            // id and secret are now available.
+            const client_id = this.cache[webID].id
+            const client_secret = this.cache[webID].secret
 
+            // Collect the resource depending on oidc provider.
+            if (provider === INRUPT) {
+                /*
+                 * Inrupt uses their own library to login and fetch the resource
+                 */
+
+                // keep sessions for inrupt webID's
                 if (!this.webID || this.webID !== webID) {
                     this.inruptSession = new Session();
                     this.webID = webID;
@@ -137,6 +178,8 @@ export default class SolidFetch {
                         })
 
                     if (this.inruptSession.info.isLoggedIn) {
+                        // we should be logged in here, ready to collect the resource.
+
                         console.info("INFO::::::::: Logged In with Client Credentials.");
                         // Perform some operation
                         res = await this.inruptSession.fetch(url);
@@ -149,34 +192,15 @@ export default class SolidFetch {
                 }
             } else {
                 // I presume your provider is a Community Solid Server instance
-                const data = await (await nodeFetch(provider + ".well-known/openid-configuration")).json()
-                const tokenUrl = data.token_endpoint;
-
-                if (!this.cache[webID]) {
-                    const email = await ask("email");
-                    const passwd = await ask("password:", true);
-                    const response = await fetch(`${provider}idp/credentials/`, {
-                        method: 'POST',
-                        headers: {'content-type': 'application/json'},
-                        // The email/password fields are those of your account.
-                        // The name field will be used when generating the ID of your token.
-                        body: JSON.stringify({
-                            email: email,
-                            password: passwd,
-                            name: `auth_fetch_${Date.now().toString()}`
-                        }),
-                    });
-
-                    const json = await response.json();
-                    let id = json.id;
-                    let secret = json.secret;
-                    this.cache[webID] = {id, secret}
-                    this.backupCache()
-                }
-                const client_id = this.cache[webID].id
-                const client_secret = this.cache[webID].secret
-
+                // If we don't have a valid token
                 if (!this.CSSTokenCache[webID] || this.CSSTokenCache[webID].isExpired()) {
+                    /*
+                     * get the tokenURL and make the request
+                     * according to the [spec](https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/#requesting-an-access-token)
+                     */
+                    const data = await (await nodeFetch(provider + ".well-known/openid-configuration")).json()
+                    const tokenUrl = data.token_endpoint;
+
                     const dpopKey = await generateDpopKeyPair();
 
                     const authString = `${encodeURIComponent(client_id)}:${encodeURIComponent(client_secret)}`;
@@ -192,6 +216,7 @@ export default class SolidFetch {
 
                     // access token with expiration in seconds
                     const {access_token: accessToken, expires_in: expiration} = await response.json();
+                    // we now have an expirable token with an associated dpop key
                     this.CSSTokenCache[webID] = new Token(accessToken, expiration, dpopKey);
                 }
                 const accessToken = this.CSSTokenCache[webID];
