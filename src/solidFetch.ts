@@ -23,7 +23,6 @@ const CSS_STORAGE = process.cwd() + "\\config\\CSS_data.json"
 
 export const INRUPT = "https://broker.pod.inrupt.com/"
 
-
 type cacheRecord = {
     id: string,
     secret: string
@@ -44,7 +43,7 @@ export default class SolidFetch {
 
     private inruptCache: Record<string, cacheRecord>;
     private CSSCache: Record<string, cacheRecord>;
-    private CSSTokenCache: Record<string, Token>
+    private readonly CSSTokenCache: Record<string, Token>
 
     constructor() {
         this.loadInruptCacheIfAvailable()
@@ -106,10 +105,7 @@ export default class SolidFetch {
 
     private inruptSession: Session;
 
-    async fetch(provider: string, url: string, webID: string): Promise<Quad[]> {
-        if (!provider.endsWith("/")) {
-            provider += "/"
-        }
+    async fetch(url: string, webID: string): Promise<Quad[]> {
         let result: Response
         let failed = false
         try {
@@ -126,6 +122,13 @@ export default class SolidFetch {
             return await responseToQuads(result)
         } else {
             this.logger.warn("fetch failed, trying an authorized approach")
+
+            let quads = await arrayifyStream((await rdfDereferencer.dereference(webID)).data)
+            let store = new Store(quads);
+            let provider = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
+            if (!provider.endsWith("/")) {
+                provider += "/";
+            }
 
             if (provider === INRUPT) {
                 if (!this.inruptCache[webID]) {
@@ -166,24 +169,13 @@ export default class SolidFetch {
                 }
             } else {
                 // I presume your provider is a Community Solid Server instance
-
-                let quads = await arrayifyStream((await rdfDereferencer.dereference(webID)).data)
-                let store = new Store(quads);
-                let base = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
-                if (!base.endsWith("/")) {
-                    base += "/";
-                }
-                const data = await (await nodeFetch(base + ".well-known/openid-configuration")).json()
-                console.log(data);
+                const data = await (await nodeFetch(provider + ".well-known/openid-configuration")).json()
                 const tokenUrl = data.token_endpoint;
-
-                console.log(base);
-                console.log(tokenUrl);
 
                 if (!this.CSSCache[webID]) {
                     const email = await ask("email");
                     const passwd = await ask("password:", true);
-                    const response = await fetch(`${base}idp/credentials/`, {
+                    const response = await fetch(`${provider}idp/credentials/`, {
                         method: 'POST',
                         headers: {'content-type': 'application/json'},
                         // The email/password fields are those of your account.
@@ -196,11 +188,8 @@ export default class SolidFetch {
                     });
 
                     const json = await response.json();
-                    console.log(json);
                     let id = json.id;
                     let secret = json.secret;
-                    console.log(id);
-                    console.log(secret);
                     this.CSSCache[webID] = {id, secret}
                     this.backupCSSCache()
                 }
@@ -208,7 +197,6 @@ export default class SolidFetch {
                 const client_secret = this.CSSCache[webID].secret
 
                 if (!this.CSSTokenCache[webID] || this.CSSTokenCache[webID].isExpired()) {
-                    console.log("here");
                     const dpopKey = await generateDpopKeyPair();
 
                     const authString = `${encodeURIComponent(client_id)}:${encodeURIComponent(client_secret)}`;
@@ -224,7 +212,6 @@ export default class SolidFetch {
 
                     // access token with expiration in seconds
                     const {access_token: accessToken, expires_in: expiration} = await response.json();
-                    console.log(accessToken);
                     this.CSSTokenCache[webID] = new Token(accessToken, expiration, dpopKey);
                 }
                 const accessToken = this.CSSTokenCache[webID];
