@@ -10,4 +10,4 @@ That is the code that I'm currently working on, without success.
 
 Found on [this forum](https://forum.solidproject.org/t/authentication-implemented-in-r/4801/2) an implementation. 
 
-Update: Inrupt webID now work with the application registration method, problem was that my `card.ttl` was set to private so the oidc issuer could not be found.
+Update: Inrupt webID now work with the application registration method, problem was that my webID document was set to private so the oidc issuer could not be found.
