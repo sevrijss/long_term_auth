@@ -49,6 +49,7 @@ export default class SolidFetch {
     constructor() {
         this.loadInruptCacheIfAvailable()
         this.loadCSSCacheIfAvailable()
+        this.CSSTokenCache = {};
     }
 
     private loadInruptCacheIfAvailable() {
@@ -168,14 +169,21 @@ export default class SolidFetch {
 
                 let quads = await arrayifyStream((await rdfDereferencer.dereference(webID)).data)
                 let store = new Store(quads);
-                const base = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
-                const data = await (await nodeFetch(base + "/.well-known/openid-configuration")).json()
+                let base = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
+                if (!base.endsWith("/")) {
+                    base += "/";
+                }
+                const data = await (await nodeFetch(base + ".well-known/openid-configuration")).json()
+                console.log(data);
                 const tokenUrl = data.token_endpoint;
+
+                console.log(base);
+                console.log(tokenUrl);
 
                 if (!this.CSSCache[webID]) {
                     const email = await ask("email");
                     const passwd = await ask("password:", true);
-                    const response = await fetch(`${base}/idp/credentials/`, {
+                    const response = await fetch(`${base}idp/credentials/`, {
                         method: 'POST',
                         headers: {'content-type': 'application/json'},
                         // The email/password fields are those of your account.
@@ -187,13 +195,12 @@ export default class SolidFetch {
                         }),
                     });
 
-                    // These are the identifier and secret of your token.
-                    // Store the secret somewhere safe as there is no way to request it again from the server!
                     const json = await response.json();
                     console.log(json);
-
                     let id = json.id;
                     let secret = json.secret;
+                    console.log(id);
+                    console.log(secret);
                     this.CSSCache[webID] = {id, secret}
                     this.backupCSSCache()
                 }
@@ -201,6 +208,7 @@ export default class SolidFetch {
                 const client_secret = this.CSSCache[webID].secret
 
                 if (!this.CSSTokenCache[webID] || this.CSSTokenCache[webID].isExpired()) {
+                    console.log("here");
                     const dpopKey = await generateDpopKeyPair();
 
                     const authString = `${encodeURIComponent(client_id)}:${encodeURIComponent(client_secret)}`;
@@ -216,6 +224,7 @@ export default class SolidFetch {
 
                     // access token with expiration in seconds
                     const {access_token: accessToken, expires_in: expiration} = await response.json();
+                    console.log(accessToken);
                     this.CSSTokenCache[webID] = new Token(accessToken, expiration, dpopKey);
                 }
                 const accessToken = this.CSSTokenCache[webID];
