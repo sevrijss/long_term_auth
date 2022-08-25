@@ -34,13 +34,8 @@ type inruptCacheRecord = {
 export default class SolidFetch {
     logger: Logger = new Logger("solidFetch");
     private webID: string;
-    private provider: string;
 
     private inruptCache: Record<string, inruptCacheRecord>;
-
-    private dpopKey: KeyPair
-
-    private cachedWebID;
 
     constructor() {
         this.loadCacheIfAvailable()
