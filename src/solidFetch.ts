@@ -1,3 +1,4 @@
+import rdfParser from "rdf-parse"
 import {Logger} from "./util/logger";
 import {Quad} from "rdf-js";
 import arrayifyStream from "arrayify-stream";
@@ -5,6 +6,8 @@ import rdfDereferencer from "rdf-dereference";
 import {ask} from "./util/IoUtil";
 import {buildAuthenticatedFetch, createDpopHeader, generateDpopKeyPair, KeyPair} from '@inrupt/solid-client-authn-core';
 import {Session} from "@inrupt/solid-client-authn-node";
+import {CONTENT_TYPE} from "./util/HTTPHeaders";
+import {Readable} from "stream";
 
 const nodeFetch = require('node-fetch')
 
@@ -51,16 +54,13 @@ export default class SolidFetch {
             const client_id = await ask("client id:")
             const client_secret = await ask("client secret:")
 
-            let tokenUrl;
-
             /**
              * code greatly derived from {@link https://communitysolidserver.github.io/CommunitySolidServer/4.x/client-credentials/ CSS}
              */
             const data = await (await nodeFetch(provider + "/.well-known/openid-configuration")).json()
-            tokenUrl = data.token_endpoint;
+            let tokenUrl = data.token_endpoint;
 
             const authString = `${encodeURIComponent(client_id)}:${encodeURIComponent(client_secret)}`;
-            console.log(tokenUrl);
             const response = await nodeFetch(tokenUrl, {
                 method: 'POST',
                 headers: {
@@ -75,7 +75,6 @@ export default class SolidFetch {
                 throw new Error("Registration Failed");
 
             const result = (await response.json())
-            console.log(result);
             const access_token = result['access_token']
             console.log(access_token);
 
@@ -98,11 +97,10 @@ export default class SolidFetch {
     private inruptSession: Session;
     private inruptWebID;
 
-    async fetch(TYPE: "CSS" | "INRUPT", provider: string, url: string, webID: string) {
+    async fetch(TYPE: "CSS" | "INRUPT", provider: string, url: string, webID: string): Promise<Quad[]> {
         if (!provider.endsWith("/")) {
             provider += "/"
         }
-        console.log(provider);
         const result: Response = await nodeFetch(url)
         if (result.ok) {
             const data: Quad[] = await arrayifyStream((await rdfDereferencer.dereference(url)).data)
@@ -110,13 +108,7 @@ export default class SolidFetch {
             return data;
         } else {
             this.logger.warn(`fetch failed with code: ${result.status} ${result.statusText}`)
-
-            const parts = url.match(this.matcher);
-            let base = parts[1] + parts[3]
-
-            const data = await (await nodeFetch(base + "/.well-known/openid-configuration")).json()
-            let tokenUrl = data.token_endpoint;
-
+            this.logger.info("trying an authorized approach");
 
             if (provider === INRUPT) {
                 this.logger.info("please register this app on https://broker.pod.inrupt.com/registration.html")
@@ -139,15 +131,19 @@ export default class SolidFetch {
                     if (this.inruptSession.info.isLoggedIn) {
                         console.info("INFO::::::::: Logged In with Client Credentials.");
                         console.log(this.inruptSession.info);
-                        console.log(this.inruptSession);
                         // Perform some operation
                         res = await this.inruptSession.fetch(url);
+                        const data = await res.text();
+                        const contentType = res.headers.get(CONTENT_TYPE).split(";")[0]
+                        console.log(contentType)
+                        console.log(data);
+                        const quads: Quad[] = await arrayifyStream(rdfParser.parse(Readable.from([data]), {
+                            contentType: contentType,
+                            baseIRI: url,
+                        }))
+                        console.log(quads);
+                        return quads
                     }
-
-                    console.log(res.url)
-                    console.log(res.status);
-                    console.log(res.statusText);
-                    console.log(res.headers);
                 } catch (err) {
                     console.log(err);
                 }
@@ -207,6 +203,8 @@ export default class SolidFetch {
                     const email = await ask("email");
                     const passwd = await ask("password:", true);
 
+                    const base = "http://localhost:3000"
+
                     // This assumes your server is started under http://localhost:3000/.
                     // This URL can also be found by checking the controls in JSON responses when interacting with the IDP API,
                     // as described in the Identity Provider section.
@@ -230,7 +228,7 @@ export default class SolidFetch {
                     secret = json.secret;
                 }
                 const dpopKey = await generateDpopKeyPair();
-
+                const tokenUrl = "http://localhost:3000"
                 // These are the ID and secret generated in the previous step.
                 // Both the ID and the secret need to be form-encoded.
                 const authString = `${encodeURIComponent(id)}:${encodeURIComponent(secret)}`;

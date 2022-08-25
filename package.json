@@ -19,7 +19,9 @@
     "arrayify-stream": "^2.0.0",
     "n3": "^1.16.2",
     "rdf-dereference": "^2.0.0",
-    "rdf-js": "^4.0.2"
+    "rdf-js": "^4.0.2",
+    "rdf-serialize": "^2.0.0",
+    "rdflib": "^2.2.19"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.3",

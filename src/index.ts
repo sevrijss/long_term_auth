@@ -72,7 +72,7 @@ const sf = new SolidFetch()
 //sf.init("https://id.inrupt.com/sevrijss", "https://broker.pod.inrupt.com").then(_ =>
 sf.fetch("CSS",
     INRUPT,
-    "https://pod.inrupt.com/sevrijss/profile/card#me",
+    "https://storage.inrupt.com/416104bb-1f65-45f0-b9ab-13551cf2bb68/private/chatrooms.ttl",
     "https://pod.inrupt.com/sevrijss/profile/card#me")
     .then(r => process.exit(0))
     .catch(r => {
