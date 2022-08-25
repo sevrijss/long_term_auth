@@ -18,8 +18,15 @@ const nodeFetch = require('node-fetch')
 
 const fetch = nodeFetch
 
-const I_STORAGE = process.cwd() + "\\config\\I_data.json"
-const CSS_STORAGE = process.cwd() + "\\config\\CSS_data.json"
+const STORAGE = process.cwd() + "\\config\\data.json"
+/*
+ * this line guaranteeds the file exists,
+ * the `a` flag makes sure the file ISN'T cleared
+ * on startup. The default would be `w` which clears
+ * the file.
+ */
+writeFileSync(STORAGE, "", {flag: "a"})
+
 
 export const INRUPT = "https://broker.pod.inrupt.com/"
 
@@ -41,66 +48,39 @@ export default class SolidFetch {
     logger: Logger = new Logger("solidFetch");
     private webID: string;
 
-    private inruptCache: Record<string, cacheRecord>;
-    private CSSCache: Record<string, cacheRecord>;
+    private cache: Record<string, cacheRecord>;
+    //private CSSCache: Record<string, cacheRecord>;
     private readonly CSSTokenCache: Record<string, Token>
 
     constructor() {
-        this.loadInruptCacheIfAvailable()
-        this.loadCSSCacheIfAvailable()
+        this.loadCacheIfAvailable()
         this.CSSTokenCache = {};
     }
 
-    private loadInruptCacheIfAvailable() {
-        const data: Buffer = readFileSync(I_STORAGE);
-        if (!this.inruptCache) {
-            this.inruptCache = {};
+    private loadCacheIfAvailable() {
+        const data: Buffer = readFileSync(STORAGE);
+        if (!this.cache) {
+            this.cache = {};
         }
         if (data.length > 0) {
             const base = JSON.parse(data.toString())
             Object.keys(base).forEach((key: string) => {
                 let {id, secret} = base[key]
-                this.inruptCache[fromB64(key)] = {id: fromB64(id), secret: fromB64(secret)}
+                this.cache[fromB64(key)] = {id: fromB64(id), secret: fromB64(secret)}
             })
         }
-        if (Object.keys(this.inruptCache).length === 0) {
-            this.backupInruptCache()
+        if (Object.keys(this.cache).length === 0) {
+            this.backupCache()
         }
     }
 
-    private loadCSSCacheIfAvailable() {
-        const data: Buffer = readFileSync(CSS_STORAGE);
-        if (!this.CSSCache) {
-            this.CSSCache = {};
-        }
-        if (data.length > 0) {
-            const base = JSON.parse(data.toString())
-            Object.keys(base).forEach((key: string) => {
-                let {id, secret} = base[key]
-                this.CSSCache[fromB64(key)] = {id: fromB64(id), secret: fromB64(secret)}
-            })
-        }
-        if (Object.keys(this.CSSCache).length === 0) {
-            this.backupCSSCache()
-        }
-    }
-
-    private backupInruptCache() {
+    private backupCache() {
         const base = {}
-        Object.keys(this.inruptCache).forEach((key: string) => {
-            let {id, secret} = this.inruptCache[key]
+        Object.keys(this.cache).forEach((key: string) => {
+            let {id, secret} = this.cache[key]
             base[B64(key)] = {id: B64(id), secret: B64(secret)}
         })
-        writeFileSync(I_STORAGE, JSON.stringify(base))
-    }
-
-    private backupCSSCache() {
-        const base = {}
-        Object.keys(this.CSSCache).forEach((key: string) => {
-            let {id, secret} = this.CSSCache[key]
-            base[B64(key)] = {id: B64(id), secret: B64(secret)}
-        })
-        writeFileSync(CSS_STORAGE, JSON.stringify(base))
+        writeFileSync(STORAGE, JSON.stringify(base))
     }
 
     private inruptSession: Session;
@@ -131,16 +111,16 @@ export default class SolidFetch {
             }
 
             if (provider === INRUPT) {
-                if (!this.inruptCache[webID]) {
+                if (!this.cache[webID]) {
                     this.logger.info("please register this app on https://broker.pod.inrupt.com/registration.html")
                     let client_id = await ask("client id:")
                     let client_secret = await ask("client secret:")
-                    this.inruptCache[webID] = {id: client_id, secret: client_secret}
-                    this.backupInruptCache()
+                    this.cache[webID] = {id: client_id, secret: client_secret}
+                    this.backupCache()
                 }
 
-                const client_id = this.inruptCache[webID].id
-                const client_secret = this.inruptCache[webID].secret
+                const client_id = this.cache[webID].id
+                const client_secret = this.cache[webID].secret
 
                 if (!this.webID || this.webID !== webID) {
                     this.inruptSession = new Session();
@@ -172,7 +152,7 @@ export default class SolidFetch {
                 const data = await (await nodeFetch(provider + ".well-known/openid-configuration")).json()
                 const tokenUrl = data.token_endpoint;
 
-                if (!this.CSSCache[webID]) {
+                if (!this.cache[webID]) {
                     const email = await ask("email");
                     const passwd = await ask("password:", true);
                     const response = await fetch(`${provider}idp/credentials/`, {
@@ -190,11 +170,11 @@ export default class SolidFetch {
                     const json = await response.json();
                     let id = json.id;
                     let secret = json.secret;
-                    this.CSSCache[webID] = {id, secret}
-                    this.backupCSSCache()
+                    this.cache[webID] = {id, secret}
+                    this.backupCache()
                 }
-                const client_id = this.CSSCache[webID].id
-                const client_secret = this.CSSCache[webID].secret
+                const client_id = this.cache[webID].id
+                const client_secret = this.cache[webID].secret
 
                 if (!this.CSSTokenCache[webID] || this.CSSTokenCache[webID].isExpired()) {
                     const dpopKey = await generateDpopKeyPair();
