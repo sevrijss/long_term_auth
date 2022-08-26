@@ -12,11 +12,14 @@ import {Store, Quad} from "n3";
 import {buildAuthenticatedFetch, createDpopHeader, generateDpopKeyPair} from "@inrupt/solid-client-authn-core";
 import {Token} from "./util/AccessToken"
 
-const nodeFetch = require('node-fetch')
+import nodeFetch from 'node-fetch';
 
 const fetch = nodeFetch
+// TODO why is this here?
 
 const STORAGE = process.cwd() + "\\config\\data.json"
+// TODO use path.resolve so that you have OS-agnostic code
+
 /*
  * this line guarantees the file exists,
  * the `a` flag makes sure the file ISN'T cleared
@@ -24,7 +27,6 @@ const STORAGE = process.cwd() + "\\config\\data.json"
  * the file.
  */
 writeFileSync(STORAGE, "", {flag: "a"})
-
 
 export const INRUPT = "https://broker.pod.inrupt.com/"
 

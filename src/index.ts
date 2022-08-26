@@ -10,7 +10,9 @@ async function main() {
 
     let data = []
 
-    // unauthenticated fetch
+    // 1. inrupt WebID
+    // 1.1 unauthenticated fetch over CSS
+    // TODO why over CSS?
     data = await sf.fetch(
         "http://localhost:3000/TestPod/profile/card#me",
         "https://pod.inrupt.com/sevrijss/profile/card#me")
@@ -19,7 +21,7 @@ async function main() {
     }
     console.log(data);
     data = [];
-    // authenticated fetch
+    // 1.2 authenticated fetch over inrupt pod
     data = await sf.fetch(
         "https://storage.inrupt.com/416104bb-1f65-45f0-b9ab-13551cf2bb68/private/private.ttl",
         "https://pod.inrupt.com/sevrijss/profile/card#me")
@@ -28,7 +30,8 @@ async function main() {
     }
     console.log(data);
     data = [];
-    // unauthenticated fetch
+    // 1. CSS WebID
+    // unauthenticated fetch over CSS
     data = await sf.fetch(
         "http://localhost:3000/TestPod/profile/card#me",
         "http://localhost:3000/TestPod/profile/card#me")
@@ -37,7 +40,7 @@ async function main() {
     }
     console.log(data);
     data = []
-    // authenticated fetch
+    // authenticated fetch over CSS
     data = await sf.fetch(
         "http://localhost:3000/TestPod/.acl",
         "http://localhost:3000/TestPod/profile/card#me")
@@ -45,6 +48,8 @@ async function main() {
         process.exit(4);
     }
     console.log(data);
+    // TODO what about the other options? authenticated inrupt webId over CSS, and authenticated CSS webID over inrupt pod?
+    // Are these important?
 }
 
 main().then(e => process.exit(0));
