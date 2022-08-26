@@ -50,3 +50,6 @@ The id and secret can be used to request an access token connected to a dpop key
 This access token is used to build an authenticated fetch to request the resource.
 
 Full docs [here](https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/)
+
+
+More examples can be found in [index.ts](src/index.ts)
