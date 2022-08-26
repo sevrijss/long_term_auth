@@ -81,6 +81,9 @@ Full docs [here](https://communitysolidserver.github.io/CommunitySolidServer/5.x
 
 More examples can be found in [index.ts](src/index.ts)
 
+> TODO specify how to run index.ts, and provide all the resources to make it run out of the box:
+> example resources (config/data.json), commands to run the right CSS instance, etc.
+
 > Note: you will need to run a CSS instance on localhost:3000 if you want the example code to work.
 > Some urls may need to be edited.
 
