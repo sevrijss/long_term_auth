@@ -22,7 +22,6 @@ async function main() {
 
     // 1. inrupt WebID
     // 1.1 unauthenticated fetch over CSS
-    // TODO why over CSS?
     data = await sf.fetch(
         openResource,
         inruptWebID)
@@ -58,8 +57,12 @@ async function main() {
         process.exit(4);
     }
     console.log(data);
-    // TODO what about the other options? authenticated inrupt webId over CSS, and authenticated CSS webID over inrupt pod?
-    // Are these important?
+
+    /*
+     * Other configurations exists, but are more difficult since the inrupt servers can't verify our CSS webid
+     * because it is hosted on localhost.
+     */
+
 }
 
 main().then(e => process.exit(0));

@@ -12,13 +12,11 @@ import {Quad, Store} from "n3";
 import {buildAuthenticatedFetch, createDpopHeader, generateDpopKeyPair} from "@inrupt/solid-client-authn-core";
 import {Token} from "./util/AccessToken"
 
+const path = require('path');
+
 import nodeFetch from 'node-fetch';
 
-const fetch = nodeFetch
-// TODO why is this here?
-
-const STORAGE = process.cwd() + "\\config\\data.json"
-// TODO use path.resolve so that you have OS-agnostic code
+const STORAGE = path.resolve("config", "data.json")
 
 /*
  * this line guarantees the file exists,
@@ -91,7 +89,7 @@ export default class SolidFetch {
         // Step -1: try to fetch resource without authentication/authorization
         try {
             console.log("trying normal fetch");
-            result = await fetch(url)
+            result = await nodeFetch(url)
             if (!result.ok) {
                 throw new Error("failed");
             }
@@ -132,7 +130,7 @@ export default class SolidFetch {
                     /*
                      * Request id and secret according to the [spec](https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/#generating-a-token)
                      */
-                    const response = await fetch(`${provider}idp/credentials/`, {
+                    const response = await nodeFetch(`${provider}idp/credentials/`, {
                         method: 'POST',
                         headers: {'content-type': 'application/json'},
                         // The email/password fields are those of your account.
@@ -205,7 +203,7 @@ export default class SolidFetch {
                     const dpopKey = await generateDpopKeyPair();
 
                     const authString = `${encodeURIComponent(client_id)}:${encodeURIComponent(client_secret)}`;
-                    const response = await fetch(tokenUrl, {
+                    const response = await nodeFetch(tokenUrl, {
                         method: 'POST',
                         headers: {
                             authorization: `Basic ${Buffer.from(authString).toString('base64')}`,
@@ -221,7 +219,7 @@ export default class SolidFetch {
                     this.CSSTokenCache[webID] = new Token(accessToken, expiration, dpopKey);
                 }
                 const accessToken = this.CSSTokenCache[webID];
-                const authFetch = await buildAuthenticatedFetch(fetch, accessToken.value(), {dpopKey: accessToken.key()});
+                const authFetch = await buildAuthenticatedFetch(nodeFetch, accessToken.value(), {dpopKey: accessToken.key()});
                 const result = await authFetch(url);
 
                 return await responseToQuads(result);
