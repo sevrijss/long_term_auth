@@ -1,6 +1,7 @@
 import rdfParser from "rdf-parse"
 import {Logger} from "./util/logger";
 import {Quad} from "rdf-js";
+// TODO do you need this if you already have n3 that also exposes a 'Quad'?
 import arrayifyStream from "arrayify-stream";
 import {ask} from "./util/IoUtil";
 import {Session} from "@inrupt/solid-client-authn-node";
