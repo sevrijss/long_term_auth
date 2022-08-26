@@ -8,7 +8,7 @@ import {Readable} from "stream";
 import {readFileSync, writeFileSync} from "fs";
 import {B64, fromB64} from "./util/StringUtils";
 import rdfDereferencer from "rdf-dereference";
-import {Store, Quad} from "n3";
+import {Quad, Store} from "n3";
 import {buildAuthenticatedFetch, createDpopHeader, generateDpopKeyPair} from "@inrupt/solid-client-authn-core";
 import {Token} from "./util/AccessToken"
 
@@ -35,9 +35,10 @@ type cacheRecord = {
 
 async function responseToQuads(response: Response) {
     const data = await response.text();
-    const contentType = response.headers.get(CONTENT_TYPE).split(";")[0]
+    const ct = response.headers.get(CONTENT_TYPE)
+
     return await arrayifyStream(rdfParser.parse(Readable.from([data]), {
-        contentType: contentType,
+        contentType: ct !== null ? ct.split(";")[0] : "text/turtle",
         baseIRI: response.url,
     }))
 }

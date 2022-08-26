@@ -2,6 +2,16 @@ import SolidFetch from "./solidFetch";
 
 export * from "./solidFetch";
 
+const CSSUrl = "http://localhost:3000"
+const podName = "TestPod"
+const openResource = `${CSSUrl}/${podName}/profile/card#me`
+const lockResource = "https://storage.inrupt.com/416104bb-1f65-45f0-b9ab-13551cf2bb68/private/private.ttl"
+
+const CSSLocked = `http://localhost:3000/${podName}/.acl`
+
+const CSSWebID = `${CSSUrl}/${podName}/profile/card#me`
+const inruptWebID = "https://pod.inrupt.com/sevrijss/profile/card#me"
+
 async function main() {
     const sf = new SolidFetch()
 
@@ -12,8 +22,8 @@ async function main() {
 
     // unauthenticated fetch
     data = await sf.fetch(
-        "http://localhost:3000/TestPod/profile/card#me",
-        "https://pod.inrupt.com/sevrijss/profile/card#me")
+        openResource,
+        inruptWebID)
     if(data.length === 0){
         process.exit(1)
     }
@@ -21,8 +31,8 @@ async function main() {
     data = [];
     // authenticated fetch
     data = await sf.fetch(
-        "https://storage.inrupt.com/416104bb-1f65-45f0-b9ab-13551cf2bb68/private/private.ttl",
-        "https://pod.inrupt.com/sevrijss/profile/card#me")
+        lockResource,
+        inruptWebID)
     if(data.length === 0){
         process.exit(2)
     }
@@ -30,8 +40,8 @@ async function main() {
     data = [];
     // unauthenticated fetch
     data = await sf.fetch(
-        "http://localhost:3000/TestPod/profile/card#me",
-        "http://localhost:3000/TestPod/profile/card#me")
+        openResource,
+        CSSWebID)
     if(data.length === 0){
         process.exit(3);
     }
@@ -39,8 +49,8 @@ async function main() {
     data = []
     // authenticated fetch
     data = await sf.fetch(
-        "http://localhost:3000/TestPod/.acl",
-        "http://localhost:3000/TestPod/profile/card#me")
+        CSSLocked,
+        CSSWebID)
     if(data.length === 0){
         process.exit(4);
     }
