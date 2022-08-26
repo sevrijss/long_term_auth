@@ -3,5 +3,4 @@ dist
 build
 local-files
 /.idea/
-/package-lock.json
 /config/

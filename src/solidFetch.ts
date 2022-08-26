@@ -1,6 +1,5 @@
 import rdfParser from "rdf-parse"
 import {Logger} from "./util/logger";
-import {Quad} from "rdf-js";
 import arrayifyStream from "arrayify-stream";
 import {ask} from "./util/IoUtil";
 import {Session} from "@inrupt/solid-client-authn-node";
@@ -9,16 +8,16 @@ import {Readable} from "stream";
 import {readFileSync, writeFileSync} from "fs";
 import {B64, fromB64} from "./util/StringUtils";
 import rdfDereferencer from "rdf-dereference";
-import {Store} from "n3";
-import {SOLID} from "./util/Vocabulary";
+import {Quad, Store} from "n3";
 import {buildAuthenticatedFetch, createDpopHeader, generateDpopKeyPair} from "@inrupt/solid-client-authn-core";
 import {Token} from "./util/AccessToken"
 
-const nodeFetch = require('node-fetch')
+const path = require('path');
 
-const fetch = nodeFetch
+import nodeFetch from 'node-fetch';
 
-const STORAGE = process.cwd() + "\\config\\data.json"
+const STORAGE = path.resolve("config", "data.json")
+
 /*
  * this line guarantees the file exists,
  * the `a` flag makes sure the file ISN'T cleared
@@ -26,7 +25,6 @@ const STORAGE = process.cwd() + "\\config\\data.json"
  * the file.
  */
 writeFileSync(STORAGE, "", {flag: "a"})
-
 
 export const INRUPT = "https://broker.pod.inrupt.com/"
 
@@ -37,9 +35,10 @@ type cacheRecord = {
 
 async function responseToQuads(response: Response) {
     const data = await response.text();
-    const contentType = response.headers.get(CONTENT_TYPE).split(";")[0]
+    const ct = response.headers.get(CONTENT_TYPE)
+
     return await arrayifyStream(rdfParser.parse(Readable.from([data]), {
-        contentType: contentType,
+        contentType: ct !== null ? ct.split(";")[0] : "text/turtle",
         baseIRI: response.url,
     }))
 }
@@ -90,7 +89,7 @@ export default class SolidFetch {
         // Step -1: try to fetch resource without authentication/authorization
         try {
             console.log("trying normal fetch");
-            result = await fetch(url)
+            result = await nodeFetch(url)
             if (!result.ok) {
                 throw new Error("failed");
             }
@@ -107,7 +106,7 @@ export default class SolidFetch {
             // first step: get oidc issuer
             let quads = await arrayifyStream((await rdfDereferencer.dereference(webID)).data)
             let store = new Store(quads);
-            let provider = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
+            let provider = store.getObjects(webID, "http://www.w3.org/ns/solid/terms#oidcIssuer", null)[0].value
             if (!provider.endsWith("/")) {
                 provider += "/";
             }
@@ -131,7 +130,7 @@ export default class SolidFetch {
                     /*
                      * Request id and secret according to the [spec](https://communitysolidserver.github.io/CommunitySolidServer/5.x/usage/client-credentials/#generating-a-token)
                      */
-                    const response = await fetch(`${provider}idp/credentials/`, {
+                    const response = await nodeFetch(`${provider}idp/credentials/`, {
                         method: 'POST',
                         headers: {'content-type': 'application/json'},
                         // The email/password fields are those of your account.
@@ -204,7 +203,7 @@ export default class SolidFetch {
                     const dpopKey = await generateDpopKeyPair();
 
                     const authString = `${encodeURIComponent(client_id)}:${encodeURIComponent(client_secret)}`;
-                    const response = await fetch(tokenUrl, {
+                    const response = await nodeFetch(tokenUrl, {
                         method: 'POST',
                         headers: {
                             authorization: `Basic ${Buffer.from(authString).toString('base64')}`,
@@ -220,7 +219,7 @@ export default class SolidFetch {
                     this.CSSTokenCache[webID] = new Token(accessToken, expiration, dpopKey);
                 }
                 const accessToken = this.CSSTokenCache[webID];
-                const authFetch = await buildAuthenticatedFetch(fetch, accessToken.value(), {dpopKey: accessToken.key()});
+                const authFetch = await buildAuthenticatedFetch(nodeFetch, accessToken.value(), {dpopKey: accessToken.key()});
                 const result = await authFetch(url);
 
                 return await responseToQuads(result);

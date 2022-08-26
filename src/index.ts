@@ -2,6 +2,16 @@ import SolidFetch from "./solidFetch";
 
 export * from "./solidFetch";
 
+const CSSUrl = "http://localhost:3000"
+const podName = "TestPod"
+const openResource = `${CSSUrl}/${podName}/profile/card#me`
+const lockResource = "https://storage.inrupt.com/416104bb-1f65-45f0-b9ab-13551cf2bb68/private/private.ttl"
+
+const CSSLocked = `http://localhost:3000/${podName}/.acl`
+
+const CSSWebID = `${CSSUrl}/${podName}/profile/card#me`
+const inruptWebID = "https://pod.inrupt.com/sevrijss/profile/card#me"
+
 async function main() {
     const sf = new SolidFetch()
 
@@ -10,41 +20,49 @@ async function main() {
 
     let data = []
 
-    // unauthenticated fetch
+    // 1. inrupt WebID
+    // 1.1 unauthenticated fetch over CSS
     data = await sf.fetch(
-        "http://localhost:3000/TestPod/profile/card#me",
-        "https://pod.inrupt.com/sevrijss/profile/card#me")
+        openResource,
+        inruptWebID)
     if(data.length === 0){
         process.exit(1)
     }
     console.log(data);
     data = [];
-    // authenticated fetch
+    // 1.2 authenticated fetch over inrupt pod
     data = await sf.fetch(
-        "https://storage.inrupt.com/416104bb-1f65-45f0-b9ab-13551cf2bb68/private/private.ttl",
-        "https://pod.inrupt.com/sevrijss/profile/card#me")
+        lockResource,
+        inruptWebID)
     if(data.length === 0){
         process.exit(2)
     }
     console.log(data);
     data = [];
-    // unauthenticated fetch
+    // 1. CSS WebID
+    // unauthenticated fetch over CSS
     data = await sf.fetch(
-        "http://localhost:3000/TestPod/profile/card#me",
-        "http://localhost:3000/TestPod/profile/card#me")
+        openResource,
+        CSSWebID)
     if(data.length === 0){
         process.exit(3);
     }
     console.log(data);
     data = []
-    // authenticated fetch
+    // authenticated fetch over CSS
     data = await sf.fetch(
-        "http://localhost:3000/TestPod/.acl",
-        "http://localhost:3000/TestPod/profile/card#me")
+        CSSLocked,
+        CSSWebID)
     if(data.length === 0){
         process.exit(4);
     }
     console.log(data);
+
+    /*
+     * Other configurations exists, but are more difficult since the inrupt servers can't verify our CSS webid
+     * because it is hosted on localhost.
+     */
+
 }
 
 main().then(e => process.exit(0));
