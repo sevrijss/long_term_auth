@@ -11,7 +11,6 @@ import {readFileSync, writeFileSync} from "fs";
 import {B64, fromB64} from "./util/StringUtils";
 import rdfDereferencer from "rdf-dereference";
 import {Store} from "n3";
-import {SOLID} from "./util/Vocabulary";
 import {buildAuthenticatedFetch, createDpopHeader, generateDpopKeyPair} from "@inrupt/solid-client-authn-core";
 import {Token} from "./util/AccessToken"
 
@@ -108,7 +107,7 @@ export default class SolidFetch {
             // first step: get oidc issuer
             let quads = await arrayifyStream((await rdfDereferencer.dereference(webID)).data)
             let store = new Store(quads);
-            let provider = store.getObjects(webID, SOLID.oidcIssuer, null)[0].value
+            let provider = store.getObjects(webID, "http://www.w3.org/ns/solid/terms#oidcIssuer", null)[0].value
             if (!provider.endsWith("/")) {
                 provider += "/";
             }
