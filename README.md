@@ -53,3 +53,6 @@ Full docs [here](https://communitysolidserver.github.io/CommunitySolidServer/5.x
 
 
 More examples can be found in [index.ts](src/index.ts)
+
+note: you will need to run a CSS instance on localhost:3000 if you want the example code to work.
+Some urls may need to be edited.
