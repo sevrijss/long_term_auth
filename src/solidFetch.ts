@@ -16,6 +16,8 @@ const path = require('path');
 
 import nodeFetch from 'node-fetch';
 
+// Would it not make more sense to make this a configurable parameter that can be passed to the SolidFetch class constructor?
+// Instead of forcing the creation of the file if not exists, you can just catch the read operation in case the file does not exist then.
 const STORAGE = path.resolve("config", "data.json")
 
 /*
@@ -82,6 +84,20 @@ export default class SolidFetch {
     }
 
     private inruptSession: Session;
+
+    // I feel like ideally, this should be translated to a function that builds an authenticated fetch function for the user.
+    // By hiding the fetch, you miss out on all the options such as headers etc..., as well you give a fetch interface that does not match the generic fetch. 
+    // I feel like the following would make more sense:
+
+    // async buildFetch(webId: string) {
+    //   if (no auth) return nodeFetch
+    //   else return authenticatedFetch
+    // }
+
+    // Now the user can just do: const fetch = buildFetch(webId)
+    // You do not always want to retrieve resources as quads as well.
+    // Solid supports images etc..., which you now are not able to retrieve.
+    // Or make this a fetchQuads() function
 
     async fetch(url: string, webID: string): Promise<Quad[]> {
         let result: Response

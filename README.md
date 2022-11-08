@@ -13,6 +13,9 @@ The inrupt library works via application registration (see [here](https://broker
 - [Installation](#installation)
 - [Usage](#usage)
 - [Working](#working)
+  - [Enterprise Solid Server](#enterprise-solid-server)
+  - [Community Solid Server](#community-solid-server)
+  - [Run examples](#run-examples)
 
 ### Description
 
@@ -61,7 +64,7 @@ if it is equal to `https://broker.pod.inrupt.com/` it approach the server as an 
 Otherwise it will approach the server as it is a CSS instance, because that requires a different approach.
 
 > Note: this check is incomplete, since other people can set up an ESS type server, which also uses the inrupt libraries,
-but there is no mechanism (yet) to tell which technology the server uses.
+but there is no mechanism (yet) to tell which technology the server usproviderprovideres.
 
 #### [Enterprise Solid Server](https://inrupt.com/products/enterprise-solid-server/)
 
