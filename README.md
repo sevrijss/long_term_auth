@@ -64,7 +64,7 @@ if it is equal to `https://broker.pod.inrupt.com/` it approach the server as an 
 Otherwise it will approach the server as it is a CSS instance, because that requires a different approach.
 
 > Note: this check is incomplete, since other people can set up an ESS type server, which also uses the inrupt libraries,
-but there is no mechanism (yet) to tell which technology the server usproviderprovideres.
+but there is no mechanism (yet) to tell which technology the server uses.
 
 #### [Enterprise Solid Server](https://inrupt.com/products/enterprise-solid-server/)
 
