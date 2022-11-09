@@ -13,6 +13,9 @@ The inrupt library works via application registration (see [here](https://broker
 - [Installation](#installation)
 - [Usage](#usage)
 - [Working](#working)
+  - [Enterprise Solid Server](#enterprise-solid-server)
+  - [Community Solid Server](#community-solid-server)
+  - [Run examples](#run-examples)
 
 ### Description
 
