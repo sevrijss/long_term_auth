@@ -219,7 +219,7 @@ export default class SolidFetch {
                     this.CSSTokenCache[webID] = new Token(accessToken, expiration, dpopKey);
                 }
                 const accessToken = this.CSSTokenCache[webID];
-                const authFetch = await buildAuthenticatedFetch(nodeFetch, accessToken.value(), {dpopKey: accessToken.key()});
+                const authFetch = await buildAuthenticatedFetch(fetch, accessToken.value(), {dpopKey: accessToken.key()});
                 const result = await authFetch(url);
 
                 return await responseToQuads(result);
