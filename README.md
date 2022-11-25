@@ -32,6 +32,7 @@ cd long_term_auth
 npm i
 npm run build
 mkdir config      # the credentials will be saved in this folder
+touch config/data.json
 ```
 
 ### Usage
@@ -114,7 +115,7 @@ const inruptWebID = ""       // the webID of your inrupt account.
 ```
 Now you should be able to run
 ```shell
-node ./build/index.ts
+node ./build/index.js
 ```
 
 > Note: you will need to run a CSS instance on localhost:3000 if you want the example code to work.
