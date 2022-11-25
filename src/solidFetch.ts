@@ -14,7 +14,7 @@ import {Token} from "./util/AccessToken"
 
 const path = require('path');
 
-import nodeFetch from 'node-fetch';
+import nodeFetch, {Response as nf_response} from 'node-fetch';
 
 const STORAGE = path.resolve("config", "data.json")
 
@@ -33,7 +33,7 @@ type cacheRecord = {
     secret: string
 }
 
-async function responseToQuads(response: Response) {
+async function responseToQuads(response: nf_response | Response) {
     const data = await response.text();
     const ct = response.headers.get(CONTENT_TYPE)
 
@@ -84,7 +84,7 @@ export default class SolidFetch {
     private inruptSession: Session;
 
     async fetch(url: string, webID: string): Promise<Quad[]> {
-        let result: Response
+        let result: nf_response
         let failed = false
         // Step -1: try to fetch resource without authentication/authorization
         try {
